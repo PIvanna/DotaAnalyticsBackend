@@ -22,8 +22,7 @@ public static class DatabaseErrorHelper
         {
             return pgEx.SqlState switch
             {
-                "23503" => "❌ Integrity error: Data used in other tables. First, delete the dependent entries.",
-                "23505" => "❌ Duplicate error: Such a record already exists.",
+                "23503" => "❌ Integrity error: The related record (Role or Player) was not found. Please ensure all base data is loaded.",                "23505" => "❌ Duplicate error: Such a record already exists.",
                 "23502" => "❌ Data error: One of the required fields is not filled.",
                 "42P01" => "❌ Schema error: Table not found in database. Check migrations.",
                 "08001" => "❌ Connection error: Failed to connect to database server.",

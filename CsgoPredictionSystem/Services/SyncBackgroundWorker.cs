@@ -79,7 +79,7 @@ public class SyncBackgroundWorker : BackgroundService
 
     private bool ShouldRun(ApiSyncStatus setting)
     {
-        if (setting.Status == "Pending") return true;
+        if (setting.Status != null && setting.Status.StartsWith("Pending")) return true;
 
         var timeSinceLastRun = DateTime.UtcNow - setting.LastRunAt.ToUniversalTime();
         

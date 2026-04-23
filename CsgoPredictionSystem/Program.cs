@@ -83,7 +83,7 @@ builder.Services.AddHostedService<SyncBackgroundWorker>();
 builder.Services.AddScoped<DashboardService>();
 
 builder.Services.AddSingleton<SystemStateService>();
-    
+builder.Services.AddScoped<PlayerDashboardService>();
     
 builder.Services.AddCors(options =>
 {

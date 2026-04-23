@@ -136,10 +136,12 @@ public class AuthController : ControllerBase
         var claims = new List<Claim> {
             new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
             new Claim(ClaimTypes.Name, user.Username),
-            new Claim(ClaimTypes.Role, user.Role.RoleName) 
+            new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "Guest"),
+            new Claim("player_id", (user.PlayerId ?? 0).ToString())
         };
 
-        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "super_secret_key_1234567890123456"));
+        var jwtKey = _config["Jwt:Key"] ?? "super_secret_key_1234567890123456";
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
         var token = new JwtSecurityToken(
@@ -242,54 +244,48 @@ public async Task<IActionResult> UpdateProfile(UpdateProfileDto dto)
     
     
     [Authorize]
-[HttpPost("link-player/{playerId}")]
-public async Task<IActionResult> LinkPlayer(int playerId)
-{
-    try 
+    [HttpPost("link-player/{playerId}")]
+    public async Task<IActionResult> LinkPlayer(int playerId)
     {
-        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdStr, out int userId))
+        try 
         {
-            return Unauthorized(new { message = "Invalid user ID." });
-        }
+            var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(userIdStr, out int userId))
+                return Unauthorized(new { message = "Invalid user ID." });
 
-        var user = await _context.Users.FindAsync(userId);
-        if (user == null) return NotFound(new { message = "No user found." });
+            var user = await _context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == userId);
+            if (user == null) return NotFound(new { message = "No user found." });
 
-        var playerExists = await _context.Players.AnyAsync(p => p.PlayerId == playerId);
-        if (!playerExists)
-        {
-            return NotFound(new { message = $"Player with ID {playerId} not found in the pro-scene database." });
-        }
+            var playerExists = await _context.Players.AnyAsync(p => p.PlayerId == playerId);
+            if (!playerExists)
+                return NotFound(new { message = $"Player with ID {playerId} not found." });
 
-        var isAlreadyLinked = await _context.Users.AnyAsync(u => u.PlayerId == playerId && u.UserId != userId);
-        if (isAlreadyLinked)
-        {
-            return BadRequest(new { message = "This pro player is already linked to another account." });
-        }
+            var isAlreadyLinked = await _context.Users.AnyAsync(u => u.PlayerId == playerId && u.UserId != userId);
+            if (isAlreadyLinked)
+                return BadRequest(new { message = "This pro player is already linked to another account." });
 
-        var playerRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Player");
-        if (playerRole == null)
-        {
-            return StatusCode(500, new { message = "Error configuring roles in the system." });
-        }
+            var playerRole = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Player");
+            if (playerRole == null)
+                return StatusCode(500, new { message = "Error configuring roles." });
 
-        user.PlayerId = playerId;
-        user.RoleId = playerRole.RoleId; 
+            user.PlayerId = playerId;
+            user.RoleId = playerRole.RoleId; 
 
-        await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
         
+            var newToken = GenerateJwtToken(user);
 
-        return Ok(new { 
-            message = "The account has been successfully linked!", 
-            role = playerRole.RoleName, 
-            playerId = user.PlayerId 
-        });
+            return Ok(new { 
+                message = "The account has been successfully linked!", 
+                role = playerRole.RoleName, 
+                playerId = user.PlayerId,
+                token = newToken 
+            });
+        }
+        catch (Exception ex)
+        {
+            var friendlyError = DatabaseErrorHelper.MapDatabaseError(ex);
+            return BadRequest(new { message = friendlyError });
+        }
     }
-    catch (Exception ex)
-    {
-        var friendlyError = DatabaseErrorHelper.MapDatabaseError(ex);
-        return BadRequest(new { message = friendlyError });
-    }
-}
 }
