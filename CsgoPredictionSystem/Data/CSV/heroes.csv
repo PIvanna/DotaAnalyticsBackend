@@ -1,0 +1,128 @@
+hero_id,hero_name,localized_name,primary_attr
+1,npc_dota_hero_antimage,Anti-Mage,agi
+2,npc_dota_hero_axe,Axe,str
+3,npc_dota_hero_bane,Bane,all
+4,npc_dota_hero_bloodseeker,Bloodseeker,agi
+5,npc_dota_hero_crystal_maiden,Crystal Maiden,int
+6,npc_dota_hero_drow_ranger,Drow Ranger,agi
+7,npc_dota_hero_earthshaker,Earthshaker,str
+8,npc_dota_hero_juggernaut,Juggernaut,agi
+9,npc_dota_hero_mirana,Mirana,agi
+10,npc_dota_hero_morphling,Morphling,agi
+11,npc_dota_hero_nevermore,Shadow Fiend,agi
+12,npc_dota_hero_phantom_lancer,Phantom Lancer,agi
+13,npc_dota_hero_puck,Puck,int
+14,npc_dota_hero_pudge,Pudge,str
+15,npc_dota_hero_razor,Razor,agi
+16,npc_dota_hero_sand_king,Sand King,all
+17,npc_dota_hero_storm_spirit,Storm Spirit,int
+18,npc_dota_hero_sven,Sven,str
+19,npc_dota_hero_tiny,Tiny,str
+20,npc_dota_hero_vengefulspirit,Vengeful Spirit,agi
+21,npc_dota_hero_windrunner,Windranger,all
+22,npc_dota_hero_zuus,Zeus,int
+23,npc_dota_hero_kunkka,Kunkka,str
+25,npc_dota_hero_lina,Lina,int
+26,npc_dota_hero_lion,Lion,int
+27,npc_dota_hero_shadow_shaman,Shadow Shaman,int
+28,npc_dota_hero_slardar,Slardar,str
+29,npc_dota_hero_tidehunter,Tidehunter,str
+30,npc_dota_hero_witch_doctor,Witch Doctor,int
+31,npc_dota_hero_lich,Lich,int
+32,npc_dota_hero_riki,Riki,agi
+33,npc_dota_hero_enigma,Enigma,all
+34,npc_dota_hero_tinker,Tinker,int
+35,npc_dota_hero_sniper,Sniper,agi
+36,npc_dota_hero_necrolyte,Necrophos,int
+37,npc_dota_hero_warlock,Warlock,int
+38,npc_dota_hero_beastmaster,Beastmaster,all
+39,npc_dota_hero_queenofpain,Queen of Pain,int
+40,npc_dota_hero_venomancer,Venomancer,all
+41,npc_dota_hero_faceless_void,Faceless Void,agi
+42,npc_dota_hero_skeleton_king,Wraith King,str
+43,npc_dota_hero_death_prophet,Death Prophet,all
+44,npc_dota_hero_phantom_assassin,Phantom Assassin,agi
+45,npc_dota_hero_pugna,Pugna,int
+46,npc_dota_hero_templar_assassin,Templar Assassin,agi
+47,npc_dota_hero_viper,Viper,agi
+48,npc_dota_hero_luna,Luna,agi
+49,npc_dota_hero_dragon_knight,Dragon Knight,str
+50,npc_dota_hero_dazzle,Dazzle,all
+51,npc_dota_hero_rattletrap,Clockwerk,str
+52,npc_dota_hero_leshrac,Leshrac,int
+53,npc_dota_hero_furion,Nature's Prophet,all
+54,npc_dota_hero_life_stealer,Lifestealer,str
+55,npc_dota_hero_dark_seer,Dark Seer,int
+56,npc_dota_hero_clinkz,Clinkz,agi
+57,npc_dota_hero_omniknight,Omniknight,str
+58,npc_dota_hero_enchantress,Enchantress,int
+59,npc_dota_hero_huskar,Huskar,str
+60,npc_dota_hero_night_stalker,Night Stalker,str
+61,npc_dota_hero_broodmother,Broodmother,agi
+62,npc_dota_hero_bounty_hunter,Bounty Hunter,agi
+63,npc_dota_hero_weaver,Weaver,agi
+64,npc_dota_hero_jakiro,Jakiro,int
+65,npc_dota_hero_batrider,Batrider,all
+66,npc_dota_hero_chen,Chen,int
+67,npc_dota_hero_spectre,Spectre,agi
+68,npc_dota_hero_ancient_apparition,Ancient Apparition,int
+69,npc_dota_hero_doom_bringer,Doom,str
+70,npc_dota_hero_ursa,Ursa,agi
+71,npc_dota_hero_spirit_breaker,Spirit Breaker,str
+72,npc_dota_hero_gyrocopter,Gyrocopter,agi
+73,npc_dota_hero_alchemist,Alchemist,str
+74,npc_dota_hero_invoker,Invoker,int
+75,npc_dota_hero_silencer,Silencer,int
+76,npc_dota_hero_obsidian_destroyer,Outworld Destroyer,int
+77,npc_dota_hero_lycan,Lycan,str
+78,npc_dota_hero_brewmaster,Brewmaster,all
+79,npc_dota_hero_shadow_demon,Shadow Demon,int
+80,npc_dota_hero_lone_druid,Lone Druid,agi
+81,npc_dota_hero_chaos_knight,Chaos Knight,str
+82,npc_dota_hero_meepo,Meepo,agi
+83,npc_dota_hero_treant,Treant Protector,str
+84,npc_dota_hero_ogre_magi,Ogre Magi,str
+85,npc_dota_hero_undying,Undying,str
+86,npc_dota_hero_rubick,Rubick,int
+87,npc_dota_hero_disruptor,Disruptor,int
+88,npc_dota_hero_nyx_assassin,Nyx Assassin,all
+89,npc_dota_hero_naga_siren,Naga Siren,agi
+90,npc_dota_hero_keeper_of_the_light,Keeper of the Light,int
+91,npc_dota_hero_wisp,Io,all
+92,npc_dota_hero_visage,Visage,all
+93,npc_dota_hero_slark,Slark,agi
+94,npc_dota_hero_medusa,Medusa,agi
+95,npc_dota_hero_troll_warlord,Troll Warlord,agi
+96,npc_dota_hero_centaur,Centaur Warrunner,str
+97,npc_dota_hero_magnataur,Magnus,all
+98,npc_dota_hero_shredder,Timbersaw,str
+99,npc_dota_hero_bristleback,Bristleback,str
+100,npc_dota_hero_tusk,Tusk,str
+101,npc_dota_hero_skywrath_mage,Skywrath Mage,int
+102,npc_dota_hero_abaddon,Abaddon,all
+103,npc_dota_hero_elder_titan,Elder Titan,str
+104,npc_dota_hero_legion_commander,Legion Commander,str
+105,npc_dota_hero_techies,Techies,all
+106,npc_dota_hero_ember_spirit,Ember Spirit,agi
+107,npc_dota_hero_earth_spirit,Earth Spirit,str
+108,npc_dota_hero_abyssal_underlord,Underlord,str
+109,npc_dota_hero_terrorblade,Terrorblade,agi
+110,npc_dota_hero_phoenix,Phoenix,str
+111,npc_dota_hero_oracle,Oracle,int
+112,npc_dota_hero_winter_wyvern,Winter Wyvern,int
+113,npc_dota_hero_arc_warden,Arc Warden,all
+114,npc_dota_hero_monkey_king,Monkey King,agi
+119,npc_dota_hero_dark_willow,Dark Willow,int
+120,npc_dota_hero_pangolier,Pangolier,all
+121,npc_dota_hero_grimstroke,Grimstroke,int
+123,npc_dota_hero_hoodwink,Hoodwink,agi
+126,npc_dota_hero_void_spirit,Void Spirit,all
+128,npc_dota_hero_snapfire,Snapfire,all
+129,npc_dota_hero_mars,Mars,str
+131,npc_dota_hero_ringmaster,Ringmaster,int
+135,npc_dota_hero_dawnbreaker,Dawnbreaker,str
+136,npc_dota_hero_marci,Marci,all
+137,npc_dota_hero_primal_beast,Primal Beast,str
+138,npc_dota_hero_muerta,Muerta,int
+145,npc_dota_hero_kez,Kez,agi
+155,npc_dota_hero_largo,Largo,str

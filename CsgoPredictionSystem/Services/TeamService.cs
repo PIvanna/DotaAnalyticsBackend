@@ -37,11 +37,14 @@ public class TeamService
     public async Task<List<object>> GetTeamsLookupAsync()
     {
         return await _context.Teams
+            .Where(t => t.ExternalId != null)  
             .OrderBy(t => t.TeamName)
-            .Select(t => new {
+            .Select(t => new
+            {
                 t.TeamId,
                 t.TeamName,
-                t.LogoPath
+                t.LogoPath,
+                t.ExternalId   
             })
             .ToListAsync<object>();
     }

@@ -7,6 +7,7 @@ using CsgoPredictionSystem.Helpers;
 using CsgoPredictionSystem.Hubs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.EntityFrameworkCore;
 
 namespace CsgoPredictionSystem.Controllers;
 
@@ -15,100 +16,149 @@ namespace CsgoPredictionSystem.Controllers;
 [Authorize(Roles = "Admin")]
 public class MlController : ControllerBase
 {
-    private readonly MlPredictionService _mlService;
+    private readonly MlPredictionService  _mlService;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<MlController> _logger;
-    private readonly SystemStateService _stateService; 
+    private readonly SystemStateService   _stateService;
+    private readonly DotaDbContext        _context;
 
     public MlController(
-        MlPredictionService mlService, 
-        IServiceScopeFactory scopeFactory, 
+        MlPredictionService  mlService,
+        IServiceScopeFactory scopeFactory,
         ILogger<MlController> logger,
-        SystemStateService stateService) 
+        SystemStateService   stateService,
+        DotaDbContext        context)
     {
-        _mlService = mlService;
+        _mlService    = mlService;
         _scopeFactory = scopeFactory;
-        _logger = logger;
+        _logger       = logger;
         _stateService = stateService;
+        _context      = context;
     }
 
     [HttpPost("train")]
     public IActionResult TrainModel([FromBody] TrainRequest request)
     {
-
         var ct = _stateService.GlobalCancellationToken;
 
-        _ = Task.Run(async () => 
+        _ = Task.Run(async () =>
         {
-            using (var scope = _scopeFactory.CreateScope())
+            try
             {
-                var scopedMlService = scope.ServiceProvider.GetRequiredService<MlPredictionService>();
-                try 
+                using var scope = _scopeFactory.CreateScope();
+                var svc = scope.ServiceProvider.GetRequiredService<MlPredictionService>();
+                await svc.TrainModelInBackground(request, ct);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to start training background task");
+                try
                 {
-                    await scopedMlService.TrainModelInBackground(request, ct);
-                }
-                catch (Exception ex)
-                {
+                    using var scope = _scopeFactory.CreateScope();
                     var hub = scope.ServiceProvider.GetRequiredService<IHubContext<SyncHub>>();
-                    await hub.Clients.All.SendAsync("ReceiveSyncUpdate", new {
+                    await hub.Clients.All.SendAsync("ReceiveSyncUpdate", new
+                    {
                         syncType = "MLTrain",
-                        status = "❌ Failed to start process: " + ex.Message,
+                        status   = $"❌ Failed to start: {ex.Message}",
                         progress = 0
                     });
                 }
+                catch {}
             }
         });
 
-        return Accepted(new { message = "Training is running in the background. Follow progress." });
+        return Accepted(new { message = "Training is running in the background. Follow progress via SignalR." });
     }
 
+
     [HttpPost("predict")]
-    public IActionResult PredictWinner([FromQuery] long t1Id, [FromQuery] long t2Id)
+    public async Task<IActionResult> PredictWinner(
+        [FromQuery] long t1Id,
+        [FromQuery] long t2Id)
     {
+        var teams = await _context.Teams
+            .Where(t => t.ExternalId == t1Id || t.ExternalId == t2Id)
+            .Select(t => new
+            {
+                t.ExternalId,
+                t.TeamName,
+                t.LogoPath
+            })
+            .ToListAsync();
+
+        var team1 = teams.FirstOrDefault(t => t.ExternalId == t1Id);
+        var team2 = teams.FirstOrDefault(t => t.ExternalId == t2Id);
+
+        if (team1 == null)
+            return BadRequest(new { message = $"Team with ExternalId={t1Id} not found." });
+        if (team2 == null)
+            return BadRequest(new { message = $"Team with ExternalId={t2Id} not found." });
+
+        string t1Name  = team1.TeamName;
+        string t2Name  = team2.TeamName;
+        string? t1Logo = team1.LogoPath;
+        string? t2Logo = team2.LogoPath;
+
         var ct = _stateService.GlobalCancellationToken;
 
-        _ = Task.Run(async () => 
+        _ = Task.Run(async () =>
         {
-            using (var scope = _scopeFactory.CreateScope())
+            try
             {
-                var scopedMlService = scope.ServiceProvider.GetRequiredService<MlPredictionService>();
-                var hub = scope.ServiceProvider.GetRequiredService<IHubContext<SyncHub>>();
+                using var scope = _scopeFactory.CreateScope();
+                var svc = scope.ServiceProvider.GetRequiredService<MlPredictionService>();
 
-                try 
+                await svc.PredictWinnerInBackground(
+                    t1Id, t2Id,
+                    t1Name, t2Name,
+                    t1Logo, t2Logo,
+                    ct
+                );
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to start prediction background task");
+                try
                 {
-                    await scopedMlService.PredictWinnerInBackground(t1Id, t2Id, ct);
-                }
-                catch (OperationCanceledException) { }
-                catch (Exception ex) {
-                    await hub.Clients.All.SendAsync("ReceiveSyncUpdate", new {
+                    using var scope = _scopeFactory.CreateScope();
+                    var hub = scope.ServiceProvider.GetRequiredService<IHubContext<SyncHub>>();
+                    await hub.Clients.All.SendAsync("ReceiveSyncUpdate", new
+                    {
                         syncType = "MLPredict",
-                        status = "❌ Launch error " + ex.Message,
+                        status   = $"❌ Launch error: {ex.Message}",
                         progress = 0
                     });
                 }
+                catch { }
             }
         });
 
-        return Accepted(new { message = "Forecast calculated..." });
+        return Accepted(new
+        {
+            message = "ML handles request...",
+            team1   = new { name = t1Name, externalId = t1Id },
+            team2   = new { name = t2Name, externalId = t2Id }
+        });
     }
 
     [HttpGet("history")]
     public async Task<IActionResult> GetTrainingHistory(
-        [FromQuery] int page = 1, 
-        [FromQuery] int pageSize = 10,
-        [FromQuery] bool onlyMine = false) 
+        [FromQuery] int  page      = 1,
+        [FromQuery] int  pageSize  = 10,
+        [FromQuery] bool onlyMine  = false)
     {
-        try 
+        try
         {
             int? filterUserId = null;
-        
+
             if (onlyMine)
             {
-                var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (!string.IsNullOrEmpty(userIdClaim))
-                {
-                    filterUserId = int.Parse(userIdClaim);
-                }
+                var claim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!string.IsNullOrEmpty(claim) && int.TryParse(claim, out int uid))
+                    filterUserId = uid;
             }
 
             var result = await _mlService.GetTrainingHistoryPagedAsync(page, pageSize, filterUserId);
@@ -117,32 +167,25 @@ public class MlController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error fetching ML history");
-        
-            var friendlyError = DatabaseErrorHelper.MapDatabaseError(ex);
-            return BadRequest(new { message = friendlyError });
+            return BadRequest(new { message = DatabaseErrorHelper.MapDatabaseError(ex) });
         }
     }
-    
-    [HttpPost("set-active/{sessionId}")]
+
+    [HttpPost("set-active/{sessionId:int}")]
     public async Task<IActionResult> SetActiveModel(int sessionId)
     {
-        try 
+        try
         {
             var success = await _mlService.SetActiveModel(sessionId);
-        
-            if (success) 
-            {
-                return Ok(new { message = $"The #{sessionId} model is now active for all predictions." });
-            }
-        
-            return NotFound(new { message = $"Model with ID {sessionId} not found in the database." });
+            if (success)
+                return Ok(new { message = $"Model #{sessionId} now active for all predictions." });
+
+            return NotFound(new { message = $"Model #{sessionId} not found in the database." });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to set active model #{SessionId}", sessionId);
-        
-            var friendlyError = DatabaseErrorHelper.MapDatabaseError(ex);
-            return BadRequest(new { message = friendlyError });
+            return BadRequest(new { message = DatabaseErrorHelper.MapDatabaseError(ex) });
         }
     }
 }

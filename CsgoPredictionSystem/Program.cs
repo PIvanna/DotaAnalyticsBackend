@@ -80,7 +80,6 @@ builder.Services.AddScoped<MatchService>();
 builder.Services.AddScoped<MlPredictionService>();
 builder.Services.AddScoped<HeroService>();
 builder.Services.AddHostedService<SyncBackgroundWorker>();
-builder.Services.AddScoped<DashboardService>();
 
 builder.Services.AddSingleton<SystemStateService>();
 builder.Services.AddScoped<PlayerDashboardService>();
