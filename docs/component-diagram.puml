@@ -177,11 +177,11 @@ SyncController --> DotaDbContext
 SyncController --> SystemStateService
 SyncController --> SyncHub : SendAsync
 
-' MlController uses service + DotaDbContext (team lookup) + SystemStateService + SignalR (error push)
+' MlController uses service + DotaDbContext (team lookup) + SystemStateService
+' SyncHub push happens via scoped IHubContext resolved inside Task.Run, not a direct field dep
 MlController --> MlPredictionService
 MlController --> DotaDbContext
 MlController --> SystemStateService
-MlController --> SyncHub : error push
 
 ' SystemController uses seeder + DotaDbContext (ClearDb) + SystemStateService + SignalR
 SystemController --> DataSeederService
@@ -197,6 +197,7 @@ SyncBackgroundWorker --> TournamentService : auto
 SyncBackgroundWorker --> HeroService : auto
 SyncBackgroundWorker --> SystemStateService : checks maintenance
 SyncBackgroundWorker --> SyncHub : status update
+SyncBackgroundWorker --> DotaDbContext
 
 ' ===== SERVICES -> DB =====
 MatchService --> DotaDbContext
