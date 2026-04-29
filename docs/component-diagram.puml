@@ -1,0 +1,223 @@
+@startuml
+skinparam componentStyle uml2
+skinparam backgroundColor white
+skinparam defaultFontSize 11
+skinparam component {
+  BackgroundColor #dae8fc
+  BorderColor #6c8ebf
+}
+skinparam interface {
+  BackgroundColor #ffe6cc
+  BorderColor #d6b656
+}
+skinparam package {
+  BackgroundColor #f5f5f5
+  BorderColor #999999
+}
+
+title Component Diagram - Dota 2 Analytics
+
+package "Client (Next.js / TypeScript)" #EBF5FB {
+
+  package "UI Components" #ffffff {
+    [AuthUI] <<component>>
+    [MatchUI] <<component>>
+    [TeamUI] <<component>>
+    [PlayerUI] <<component>>
+    [TournamentUI] <<component>>
+    [PredictUI] <<component>>
+    [DashboardUI] <<component>>
+    [AdminUI] <<component>>
+  }
+
+  [AuthContext] <<component>>
+  [APIServices] <<component>>
+  [Models_DTOs] <<component>>
+  [SyncHubProvider] <<component>>
+
+  package "SignalR Parsers" #ffffff {
+    [SyncHubLive] <<component>>
+    [SeedHubLive] <<component>>
+    [MlTrainLive] <<component>>
+  }
+}
+
+package "Server (ASP.NET Core / C#)" #EAFAF1 {
+
+  package "Controllers" #ffffff {
+    [AuthController] <<component>>
+    [MatchController] <<component>>
+    [TeamController] <<component>>
+    [PlayerController] <<component>>
+    [PlayerDashboardController] <<component>>
+    [TournamentController] <<component>>
+    [PredictionController] <<component>>
+    [SyncController] <<component>>
+    [MlController] <<component>>
+    [SystemController] <<component>>
+  }
+
+  package "Services" #ffffff {
+    [MatchService] <<component>>
+    [TeamService] <<component>>
+    [PlayerService] <<component>>
+    [PlayerDashboardService] <<component>>
+    [TournamentService] <<component>>
+    [HeroService] <<component>>
+    [MlPredictionService] <<component>>
+    [DataSeederService] <<component>>
+    [SyncBackgroundWorker] <<component>>
+  }
+
+  [SystemStateService] <<component>>
+  [SyncHub] <<component>>
+  [DotaDbContext] <<component>>
+}
+
+package "ML Module (Python)" #FDEDEC {
+  [dota_engine] <<component>>
+}
+
+database "PostgreSQL" #FEF9E7 {
+  [Database] <<component>>
+}
+
+cloud "External" #F4ECF7 {
+  [OpenDotaAPI] <<component>>
+}
+
+' ===== ІНТЕРФЕЙСИ =====
+interface "IAuthAPI" as IAuth
+interface "IUserAPI" as IUser
+interface "IMatchAPI" as IMatch
+interface "ITeamAPI" as ITeam
+interface "IPlayerAPI" as IPlayer
+interface "IPlayerDashAPI" as IPlayerDash
+interface "ITournamentAPI" as ITournament
+interface "IPredictAPI" as IPredict
+interface "ISyncAPI\n(manual+auto)" as ISync
+interface "IMlAdminAPI" as IMlAdmin
+interface "ISignalR\n(ReceiveSyncUpdate)" as ISignalR
+
+' ===== СЕРВЕР НАДАЄ ІНТЕРФЕЙСИ =====
+AuthController -up- IAuth
+AuthController -up- IUser
+MatchController -up- IMatch
+TeamController -up- ITeam
+PlayerController -up- IPlayer
+PlayerDashboardController -up- IPlayerDash
+TournamentController -up- ITournament
+PredictionController -up- IPredict
+SyncController -up- ISync
+MlController -up- IMlAdmin
+SyncHub -up- ISignalR
+
+' ===== КЛІЄНТ ВИКОРИСТОВУЄ ІНТЕРФЕЙСИ =====
+APIServices ..> IAuth : use
+APIServices ..> IUser : use
+APIServices ..> IMatch : use
+APIServices ..> ITeam : use
+APIServices ..> IPlayer : use
+APIServices ..> IPlayerDash : use
+APIServices ..> ITournament : use
+APIServices ..> IPredict : use
+APIServices ..> ISync : use
+APIServices ..> IMlAdmin : use
+
+' ===== SIGNALR PROVIDER =====
+SyncHubProvider ..> ISignalR : single HubConnection
+SyncHubProvider --> SyncHubLive
+SyncHubProvider --> SeedHubLive
+SyncHubProvider --> MlTrainLive
+
+' ===== МОДЕЛІ =====
+Models_DTOs <.. APIServices : uses types
+Models_DTOs <.. AuthContext : uses types
+
+' ===== AUTH CONTEXT =====
+AuthUI --> AuthContext
+AdminUI --> AuthContext
+PlayerUI --> AuthContext
+DashboardUI --> AuthContext
+AuthContext --> APIServices
+
+' ===== UI → APIServices =====
+AuthUI --> APIServices
+MatchUI --> APIServices
+TeamUI --> APIServices
+PlayerUI --> APIServices
+TournamentUI --> APIServices
+PredictUI --> APIServices
+DashboardUI --> APIServices
+AdminUI --> APIServices
+AdminUI --> SyncHubProvider
+
+' ===== КОНТРОЛЕРИ → СЕРВІСИ / БД =====
+AuthController --> DotaDbContext
+MatchController --> MatchService
+TeamController --> TeamService
+PlayerController --> PlayerService
+PlayerDashboardController --> PlayerDashboardService
+TournamentController --> TournamentService
+PredictionController --> MlPredictionService
+PredictionController --> DotaDbContext
+SyncController --> MatchService
+SyncController --> TeamService
+SyncController --> PlayerService
+SyncController --> TournamentService
+SyncController --> HeroService
+SyncController --> DotaDbContext
+SyncController --> SyncHub : SendAsync
+MlController --> MlPredictionService
+MlController --> DotaDbContext
+SystemController --> DataSeederService
+SystemController --> DotaDbContext
+SystemController --> SyncHub : maintenance events
+
+' ===== SystemStateService =====
+MlController --> SystemStateService
+SyncController --> SystemStateService
+SystemController --> SystemStateService
+SyncBackgroundWorker --> SystemStateService
+
+' ===== ФОНОВИЙ ВОРКЕР =====
+SyncBackgroundWorker --> MatchService : auto
+SyncBackgroundWorker --> TeamService : auto
+SyncBackgroundWorker --> PlayerService : auto
+SyncBackgroundWorker --> TournamentService : auto
+SyncBackgroundWorker --> HeroService : auto
+SyncBackgroundWorker --> DotaDbContext
+SyncBackgroundWorker --> SyncHub : status update
+
+' ===== СЕРВІСИ → БД =====
+MatchService --> DotaDbContext
+TeamService --> DotaDbContext
+PlayerService --> DotaDbContext
+PlayerDashboardService --> DotaDbContext
+TournamentService --> DotaDbContext
+HeroService --> DotaDbContext
+MlPredictionService --> DotaDbContext
+DataSeederService --> DotaDbContext
+DotaDbContext --> Database
+
+' ===== СЕРВІСИ → SIGNALR =====
+MatchService --> SyncHub : SendAsync
+TeamService --> SyncHub : SendAsync
+PlayerService --> SyncHub : SendAsync
+HeroService --> SyncHub : SendAsync
+TournamentService --> SyncHub : SendAsync
+MlPredictionService --> SyncHub : ML progress
+DataSeederService --> SyncHub : seed progress
+
+' ===== ML =====
+MlPredictionService --> dota_engine : stdin/stdout JSON
+dota_engine --> Database : psycopg2
+
+' ===== ЗОВНІШНІЙ API =====
+MatchService --> OpenDotaAPI : HTTPS/JSON
+TeamService --> OpenDotaAPI : HTTPS/JSON
+PlayerService --> OpenDotaAPI : HTTPS/JSON
+TournamentService --> OpenDotaAPI : HTTPS/JSON
+HeroService --> OpenDotaAPI : HTTPS/JSON
+
+@enduml
