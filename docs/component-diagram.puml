@@ -67,9 +67,9 @@ package "Server (ASP.NET Core / C#)" #EAFAF1 {
     [MlPredictionService] <<component>>
     [DataSeederService] <<component>>
     [SyncBackgroundWorker] <<component>>
-    [SystemStateService] <<component>>
   }
 
+  [SystemStateService] <<component>>
   [SyncHub] <<component>>
   [DotaDbContext] <<component>>
 }
@@ -92,7 +92,7 @@ interface "IUserAPI" as IUser
 interface "IMatchAPI" as IMatch
 interface "ITeamAPI" as ITeam
 interface "IPlayerAPI" as IPlayer
-interface "IPlayerDashboardAPI" as IPlayerDashboard
+interface "IPlayerDashAPI" as IPlayerDash
 interface "ITournamentAPI" as ITournament
 interface "IPredictAPI" as IPredict
 interface "ISyncAPI\n(manual+auto)" as ISync
@@ -100,12 +100,13 @@ interface "IMlAdminAPI" as IMlAdmin
 interface "ISignalR\n(ReceiveSyncUpdate)" as ISignalR
 
 ' ===== SERVER PROVIDES INTERFACES =====
+' AuthController provides both auth (login/register) and user profile (IUser)
 AuthController -up- IAuth
 AuthController -up- IUser
 MatchController -up- IMatch
 TeamController -up- ITeam
 PlayerController -up- IPlayer
-PlayerDashboardController -up- IPlayerDashboard
+PlayerDashboardController -up- IPlayerDash
 TournamentController -up- ITournament
 PredictionController -up- IPredict
 SyncController -up- ISync
@@ -118,7 +119,7 @@ APIServices ..> IUser : use
 APIServices ..> IMatch : use
 APIServices ..> ITeam : use
 APIServices ..> IPlayer : use
-APIServices ..> IPlayerDashboard : use
+APIServices ..> IPlayerDash : use
 APIServices ..> ITournament : use
 APIServices ..> IPredict : use
 APIServices ..> ISync : use
@@ -158,29 +159,33 @@ AuthController --> DotaDbContext
 
 MatchController --> MatchService
 TeamController --> TeamService
-
-' PlayerController uses only PlayerService
 PlayerController --> PlayerService
-
-' PlayerDashboardController uses only PlayerDashboardService
 PlayerDashboardController --> PlayerDashboardService
-
 TournamentController --> TournamentService
+
+' PredictionController uses MlPredictionService + DotaDbContext directly (team lookups)
 PredictionController --> MlPredictionService
 PredictionController --> DotaDbContext
 
+' SyncController uses services + DotaDbContext directly (status queries) + SignalR
 SyncController --> MatchService
 SyncController --> TeamService
 SyncController --> PlayerService
 SyncController --> TournamentService
 SyncController --> HeroService
-SyncController --> SyncHub : SignalR push
+SyncController --> DotaDbContext
+SyncController --> SystemStateService
+SyncController --> SyncHub : SendAsync
 
+' MlController uses service + DotaDbContext (team lookup) + SystemStateService + SignalR (error push)
 MlController --> MlPredictionService
+MlController --> DotaDbContext
 MlController --> SystemStateService
 MlController --> SyncHub : error push
 
+' SystemController uses seeder + DotaDbContext (ClearDb) + SystemStateService + SignalR
 SystemController --> DataSeederService
+SystemController --> DotaDbContext
 SystemController --> SystemStateService
 SystemController --> SyncHub : maintenance events
 
@@ -191,7 +196,7 @@ SyncBackgroundWorker --> PlayerService : auto
 SyncBackgroundWorker --> TournamentService : auto
 SyncBackgroundWorker --> HeroService : auto
 SyncBackgroundWorker --> SystemStateService : checks maintenance
-SyncBackgroundWorker --> SyncHub : sync status
+SyncBackgroundWorker --> SyncHub : status update
 
 ' ===== SERVICES -> DB =====
 MatchService --> DotaDbContext
@@ -205,11 +210,11 @@ DataSeederService --> DotaDbContext
 DotaDbContext --> Database
 
 ' ===== SERVICES -> SignalR (direct hub push) =====
-MatchService --> SyncHub : sync progress
-TeamService --> SyncHub : sync progress
-PlayerService --> SyncHub : sync progress
-TournamentService --> SyncHub : sync progress
-HeroService --> SyncHub : sync progress
+MatchService --> SyncHub : SendAsync
+TeamService --> SyncHub : SendAsync
+PlayerService --> SyncHub : SendAsync
+HeroService --> SyncHub : SendAsync
+TournamentService --> SyncHub : SendAsync
 MlPredictionService --> SyncHub : ML progress
 DataSeederService --> SyncHub : seed progress
 
@@ -218,11 +223,11 @@ MlPredictionService --> dota_engine : stdin/stdout JSON
 dota_engine --> Database : psycopg2
 
 ' ===== EXTERNAL API =====
+' DataSeederService loads from CSV files only, does NOT call OpenDotaAPI
 MatchService --> OpenDotaAPI : HTTPS/JSON
 TeamService --> OpenDotaAPI : HTTPS/JSON
 PlayerService --> OpenDotaAPI : HTTPS/JSON
 TournamentService --> OpenDotaAPI : HTTPS/JSON
 HeroService --> OpenDotaAPI : HTTPS/JSON
-DataSeederService --> OpenDotaAPI : HTTPS/JSON
 
 @enduml
